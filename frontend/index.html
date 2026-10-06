@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tutor IA</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header>
+        <div class="logo">🎓</div>
+        <div>
+          <h1>Tutor IA</h1>
+          <p>Seu assistente de estudos</p>
+        </div>
+      </header>
+    <div id="mensagens"></div>
+
+    <form id="formulario">
+      <input id="entrada" type="text" placeholder="Digite sua pergunta..." autocomplete="off">
+      <button id="enviar" type="submit">Enviar</button>
+    </form>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
