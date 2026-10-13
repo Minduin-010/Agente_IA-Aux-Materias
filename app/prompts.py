@@ -1,3 +1,13 @@
+"""Prompts do tutor.
+
+Define o prompt de sistema base e as orientações específicas por matéria
+e por modo de interação. O prompt final é montado em `montar_prompt`.
+"""
+
+# Prompt base
+# Descreve o papel do tutor, a forma de ensinar, a conduta em exercícios,
+# a postura de honestidade e o tom. Os campos entre chaves são preenchidos
+# em `montar_prompt`.
 BASE_PROMPT = """Você é o Tutor, um assistente de estudos para alunos do ensino básico e de um curso técnico em desenvolvimento de sistemas. Seu objetivo é fazer o aluno APRENDER, não apenas entregar respostas prontas.
 
 ## Como você ensina
@@ -27,7 +37,11 @@ Orientação da matéria: {instrucao_materia}
 Orientação do modo: {instrucao_modo}
 """
 
+# Orientações por matéria
+# Cada entrada ajusta o estilo de ensino ao conteúdo da disciplina.
+# "Geral" é o valor padrão: o tutor identifica a matéria pela pergunta.
 MATERIAS = {
+    "Geral": "Identifique pela pergunta qual é a matéria (escolar ou do curso técnico) e adapte a explicação a ela e ao nível do aluno.",
     "Matemática": "Resolva passo a passo, mostrando cada conta. Peça que o aluno tente o próximo passo.",
     "Português": "Foque em interpretação, gramática e redação, sempre com exemplos de frases.",
     "Ciências": "Conecte os conceitos a fenômenos do dia a dia e use analogias simples.",
@@ -39,21 +53,34 @@ MATERIAS = {
     "Front-End": "Use exemplos curtos de HTML, CSS e JavaScript e explique o que cada parte faz na tela.",
     "Banco de dados": "Ensine modelagem e SQL com tabelas de exemplo pequenas e consultas explicadas passo a passo.",
     "Mobile": "Explique conceitos de apps (telas, navegação, estado) com exemplos de código curtos.",
-        "Geral": "Identifique pela pergunta qual é a matéria (escolar ou do curso técnico) e adapte a explicação a ela e ao nível do aluno.",
 }
 
+# Orientações por modo
+# Definem o formato da interação. "Geral" deixa a escolha a cargo do tutor.
 MODOS = {
+    "Geral": "Escolha o formato mais útil para o aluno: explicar um conceito, propor um exercício ou fazer um quiz, conforme o que ele pedir. Se o pedido for vago, pergunte o que ele quer fazer.",
     "Explicar": "Ensine o conceito do zero com analogias e exemplos, e termine checando o entendimento.",
     "Praticar": "Proponha UM exercício por vez, espere a resposta do aluno e dê feedback com dicas antes da solução.",
     "Revisar": "Faça perguntas de quiz, UMA por vez, espere a resposta, corrija e explique brevemente.",
-    "Geral": "Escolha o formato mais útil para o aluno: explicar um conceito, propor um exercício ou fazer um quiz, conforme o que ele pedir. Se o pedido for vago, pergunte o que ele quer fazer.",
 }
+
+# Texto usado quando a matéria ou o modo informado não existe nos dicionários
+ORIENTACAO_PADRAO = "Ajude de forma geral."
 
 
 def montar_prompt(materia: str, modo: str) -> str:
+    """Monta o prompt de sistema para a matéria e o modo informados.
+
+    Args:
+        materia: Chave de `MATERIAS`.
+        modo: Chave de `MODOS`.
+
+    Returns:
+        Prompt completo, com as orientações da matéria e do modo inseridas.
+    """
     return BASE_PROMPT.format(
         materia=materia,
         modo=modo,
-        instrucao_materia=MATERIAS.get(materia, "Ajude de forma geral."),
-        instrucao_modo=MODOS.get(modo, "Ajude de forma geral."),
+        instrucao_materia=MATERIAS.get(materia, ORIENTACAO_PADRAO),
+        instrucao_modo=MODOS.get(modo, ORIENTACAO_PADRAO),
     )
