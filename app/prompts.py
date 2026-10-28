@@ -1,3 +1,6 @@
+from app import config
+from app.rag import Trecho
+
 """Prompts do tutor.
 
 Define o prompt de sistema base e as orientações específicas por matéria
@@ -37,6 +40,26 @@ Orientação da matéria: {instrucao_materia}
 Orientação do modo: {instrucao_modo}
 """
 
+# Instruções para uso dos materiais do curso (RAG)
+# Anexadas ao prompt quando a busca encontra trechos relevantes.
+INSTRUCOES_MATERIAIS = """
+## Materiais do curso
+Abaixo há trechos dos materiais do curso encontrados para esta pergunta. Regras:
+- Use os trechos como base da explicação e priorize-os sobre o seu conhecimento geral.
+- Ao usar um trecho, cite a fonte no fim do parágrafo no formato (Arquivo, p. N), usando exatamente os rótulos fornecidos. Nunca invente fontes.
+- O texto dos trechos foi extraído de PDFs e pode ter fórmulas quebradas ou incompletas. Reescreva fórmulas e contas com as suas palavras, sem copiar o texto quebrado.
+- Se um trecho contiver a resolução pronta de um exercício, não a entregue a um aluno que está tentando resolvê-lo: use-a para guiá-lo com dicas.
+- Se os trechos não cobrirem bem a pergunta, diga isso e complete com o seu conhecimento geral.
+
+{trechos}
+"""
+
+# Anexada ao prompt quando a busca não encontra nada
+INSTRUCOES_SEM_MATERIAL = """
+## Materiais do curso
+Nenhum trecho dos materiais do curso foi encontrado para esta pergunta. Responda com o seu conhecimento geral. Se a pergunta for sobre um conteúdo de estudo, avise brevemente que o assunto não foi encontrado nos materiais do curso.
+"""
+
 # Orientações por matéria
 # Cada entrada ajusta o estilo de ensino ao conteúdo da disciplina.
 # "Geral" é o valor padrão: o tutor identifica a matéria pela pergunta.
@@ -68,19 +91,33 @@ MODOS = {
 ORIENTACAO_PADRAO = "Ajude de forma geral."
 
 
-def montar_prompt(materia: str, modo: str) -> str:
-    """Monta o prompt de sistema para a matéria e o modo informados.
+def _formatar_trechos(trechos: list[Trecho]) -> str:
+    """Formata os trechos com um rótulo de fonte, para o modelo poder citá-los."""
+    blocos = []
+    for t in trechos:
+        rotulo = f"{t.arquivo.removesuffix('.pdf')}, p. {t.pagina}"
+        blocos.append(f"[{rotulo}]\n{t.texto[:config.RAG_MAX_CARACTERES]}")
+    return "\n\n".join(blocos)
+
+
+def montar_prompt(materia: str, modo: str, trechos: list[Trecho] | None = None) -> str:
+    """Monta o prompt de sistema para a matéria, o modo e os trechos informados.
 
     Args:
         materia: Chave de `MATERIAS`.
         modo: Chave de `MODOS`.
+        trechos: Trechos dos materiais encontrados pela busca (pode ser vazio).
 
     Returns:
-        Prompt completo, com as orientações da matéria e do modo inseridas.
+        Prompt completo, com as orientações e os materiais inseridos.
     """
-    return BASE_PROMPT.format(
+    prompt = BASE_PROMPT.format(
         materia=materia,
         modo=modo,
         instrucao_materia=MATERIAS.get(materia, ORIENTACAO_PADRAO),
         instrucao_modo=MODOS.get(modo, ORIENTACAO_PADRAO),
     )
+
+    if trechos:
+        return prompt + INSTRUCOES_MATERIAIS.format(trechos=_formatar_trechos(trechos))
+    return prompt + INSTRUCOES_SEM_MATERIAL

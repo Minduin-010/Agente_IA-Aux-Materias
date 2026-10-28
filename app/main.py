@@ -5,18 +5,32 @@ A lógica de geração de respostas fica em `app.llm`.
 """
 
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from app import config
+from app import config, rag
 from app.llm import gerar_resposta
 from app.prompts import MATERIAS, MODOS
 from app.schemas import PedidoChat, RespostaChat
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn.error")
 
-app = FastAPI(title="Tutor IA")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    """Carrega o índice de busca dos materiais ao iniciar o servidor."""
+    ignoradas = rag.carregar()
+    logger.info(
+        "RAG: %d trechos carregados (%d páginas ignoradas por texto quebrado)",
+        rag.total_trechos(),
+        ignoradas,
+    )
+    yield
+
+
+app = FastAPI(title="Tutor IA", lifespan=lifespan)
 
 # CORS: permite que a página (frontend) consuma a API
 app.add_middleware(
